@@ -19,10 +19,11 @@ int main(void) {
 
 	sock.bind(port);
 	sock.listen(5);
+
 	for (int i = 0; i < 5; i++) {
 		MySocket clnt = sock.accept();
 		while (1) {
-			sock.send(clnt.recv());
+			clnt.send(clnt.recv());
 		}
 		clnt.close();
 	}
