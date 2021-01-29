@@ -3,6 +3,7 @@
 int main(void) {
 
 	unsigned short port = 0;
+	std::string buffer;
 
 	while (1) {
 		std::cout << "insert port number(1024 ~ 49151) : ";
@@ -23,7 +24,12 @@ int main(void) {
 	for (int i = 0; i < 5; i++) {
 		MySocket clnt = sock.accept();
 		while (1) {
-			clnt.send(clnt.recv());
+			buffer = clnt.recv();
+
+			if (buffer.size() == 1)
+				break;
+
+			clnt.send(buffer);
 		}
 		clnt.close();
 	}
