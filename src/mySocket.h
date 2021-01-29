@@ -19,6 +19,42 @@
 
 #define BUFFER_SIZE 1024
 
+class SockAddrSet
+{
+public:
+	sockaddr_in _addr;
+	socklen_t _size;
+
+	SockAddrSet(const std::string &ip, short port);
+	SockAddrSet(short port);
+	SockAddrSet();
+	~SockAddrSet();
+};
+
+SockAddrSet::SockAddrSet(const std::string &ip, short port)
+{
+	_addr.sin_family = AF_INET;
+	_addr.sin_addr.s_addr = inet_addr(ip.c_str());
+	_addr.sin_port = htons(port);
+
+	_size = sizeof(_addr);
+}
+
+SockAddrSet::SockAddrSet(short port) {
+	_addr.sin_family = AF_INET;
+	_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	_addr.sin_port = htons(port);
+
+	_size = sizeof(_addr);
+}
+
+SockAddrSet::SockAddrSet() {	_size = sizeof(_addr);}
+
+SockAddrSet::~SockAddrSet()
+{
+	
+}
+
 class MySocket
 {
 public:
@@ -35,7 +71,9 @@ public:
 	MySocket accept();
 
 	int send(std::string msg);
+	int sendTo(std::string msg, const SockAddrSet& to);
 	std::string recv();
+	std::string recvFrom(SockAddrSet& from);
 
 	int close();
 
@@ -51,6 +89,8 @@ private:
 	short _port = 0;
 	std::string _ip = "";
 	sockaddr_in _addr = {};
+
+	bool isConnected = false;
 };
 
 MySocket::MySocket(const int &type)
@@ -112,6 +152,9 @@ int MySocket::connect(std::string address, const short &port) {
 			errorHandler("connect() error");
 		}
 	}
+	
+	if(temp != -1)
+		isConnected = true;
 
 	return temp;
 }
@@ -151,12 +194,39 @@ int MySocket::send(std::string msg) {
 	return write(_sock, msg.c_str(), msg.size());
 }
 
+int MySocket::sendTo(std::string msg, const SockAddrSet& to) {
+	return ::sendto(_sock, msg.c_str(), msg.size(), 0,
+		(struct sockaddr*)&to, sizeof(to));
+}
+
 std::string MySocket::recv() {
 	char readBuffer[BUFFER_SIZE];
 	int recvSize;
 	std::string data;
 	while (1) {
 		recvSize = read(_sock, readBuffer, BUFFER_SIZE - 1);
+
+		readBuffer[recvSize] = 0;
+
+		data = data + readBuffer;
+
+		if (recvSize < BUFFER_SIZE - 1) {
+			break;
+		}
+	}
+
+	data.push_back(0);
+
+	return data;
+}
+
+std::string MySocket::recvFrom(SockAddrSet& from) {
+	char readBuffer[BUFFER_SIZE];
+	int recvSize;
+	std::string data;
+	while (1) {
+		recvSize = ::recvfrom(_sock, readBuffer, BUFFER_SIZE - 1, 0,
+						 (struct sockaddr *)&from._addr, &from._size);
 
 		readBuffer[recvSize] = 0;
 
