@@ -22,16 +22,26 @@
 class MySocket
 {
 public:
+	bool debugMode = false;
+
 	MySocket(const int &type);
 	MySocket(int sock, const int &type, sockaddr_in addr);
+
 	MySocket& operator=(MySocket& ref);
+
 	int bind(const short &port);
 	int connect(std::string ip, const short &port);
 	int listen(int waiting);
 	MySocket accept();
+
 	int send(std::string msg);
-	int close();
 	std::string recv();
+
+	int close();
+
+	void getSocketInfo(int& _sock, int& _port, int& _type, sockaddr_in& addr);
+
+	static void errorHandler(std::string message);
 	
 	~MySocket();
 
@@ -79,7 +89,15 @@ int MySocket::bind(const short &port) {
 	_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	_addr.sin_port = htons(_port);
 
-	return ::bind(_sock, (sockaddr *)&_addr, sizeof(_addr));
+	int temp = ::bind(_sock, (sockaddr *)&_addr, sizeof(_addr));
+
+	if (debugMode) {
+		if (temp == -1) {
+			errorHandler("bind() error");
+		}
+	}
+
+	return temp;
 }
 
 int MySocket::connect(std::string address, const short &port) {
@@ -87,11 +105,27 @@ int MySocket::connect(std::string address, const short &port) {
 	_addr.sin_addr.s_addr = inet_addr(address.c_str());
 	_addr.sin_port = htons(port);
 
-	return ::connect(_sock, (struct sockaddr*)&_addr, sizeof(_addr));
+	int temp = ::connect(_sock, (struct sockaddr*)&_addr, sizeof(_addr));
+
+	if (debugMode) {
+		if (temp == -1) {
+			errorHandler("connect() error");
+		}
+	}
+
+	return temp;
 }
 
 int MySocket::listen(int wating) {
-	return ::listen(_sock, wating);
+	int temp = ::listen(_sock, wating);
+
+	if (debugMode) {
+		if (temp == -1) {
+			errorHandler("listen() error");
+		}
+	}
+
+	return temp;
 }
 
 MySocket MySocket::accept() {
@@ -101,6 +135,12 @@ MySocket MySocket::accept() {
 	clntAddrSize = sizeof(clntAddr);
 
 	int clntSock = ::accept(_sock, (sockaddr *)&clntAddr, &clntAddrSize);
+
+	if (debugMode) {
+		if (clntSock == -1) {
+			errorHandler("accept() error");
+		}
+	}
 
 	MySocket tempSock(clntSock, _type, clntAddr);
 
@@ -140,4 +180,9 @@ int MySocket::close() {
 MySocket::~MySocket()
 {
 	this->close();
+}
+
+void MySocket::errorHandler(std::string message) {
+	std::cout << message << std::endl;
+	exit(1);
 }

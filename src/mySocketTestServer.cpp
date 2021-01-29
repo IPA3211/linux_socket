@@ -14,9 +14,10 @@ int main(void) {
 		errorHandler("bind() error");
 
 	if (servSock.listen(5) == -1)
-		errorHandler("bind() error");
+		errorHandler("listen() error");
 
 	MySocket clntSock = servSock.accept();
+	
 
 	while (1) {
 		buffer = clntSock.recv();
