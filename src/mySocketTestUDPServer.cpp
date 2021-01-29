@@ -19,7 +19,6 @@ int main(void) {
 	sock.debugMode = true;
 
 	sock.bind(port);
-	sock.listen(5);
 
 	for (int i = 0; i < 5; i++) {
 		while (1) {
