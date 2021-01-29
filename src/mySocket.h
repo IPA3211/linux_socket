@@ -200,8 +200,9 @@ int MySocket::send(std::string msg) {
 	case UDP:
 		for (int i = 0; ; i++) {
 			buffer = msg.substr(BUFFER_SIZE * i, BUFFER_SIZE);
-			if(write(_sock, buffer.c_str(), buffer.size()) <= BUFFER_SIZE)
-				return;
+			int a = write(_sock, buffer.c_str(), buffer.size());
+			if (a <= BUFFER_SIZE)
+				return a;
 		}
 		break;
 	default:
