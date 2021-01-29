@@ -191,7 +191,22 @@ MySocket MySocket::accept() {
 }
 
 int MySocket::send(std::string msg) {
-	return write(_sock, msg.c_str(), msg.size());
+	std::string buffer;
+	switch (_type)
+	{
+	case TCP:
+		return write(_sock, msg.c_str(), msg.size());
+		break;
+	case UDP:
+		for (int i = 0; ; i++) {
+			buffer = msg.substr(BUFFER_SIZE * i, BUFFER_SIZE);
+			if(write(_sock, buffer.c_str(), buffer.size()) <= BUFFER_SIZE)
+				return;
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 int MySocket::sendTo(std::string msg, const SockAddrSet& to) {
