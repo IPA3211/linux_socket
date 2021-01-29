@@ -192,7 +192,7 @@ MySocket MySocket::accept() {
 
 int MySocket::send(std::string msg) {
 	std::string buffer;
-	int bfSize = BUFFER_SIZE - 1;
+	int bfSize = BUFFER_SIZE - 2;
 	switch (_type)
 	{
 	case TCP:
@@ -205,7 +205,8 @@ int MySocket::send(std::string msg) {
 			else
 				buffer = msg.substr(bfSize * i, msg.size() - bfSize * i);
 			int a = write(_sock, buffer.c_str(), buffer.size());
-			if (a <= bfSize)
+			std::cout << a << std::endl;
+			if (a <= bfSize - 1)
 				return a;
 		}
 		break;
