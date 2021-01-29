@@ -1,34 +1,39 @@
 #include "mySocket.h"
 
-void errorHandler(std::string message);
-
 int main(void) {
-	short port;
+
+	unsigned short port = 0;
 	std::string buffer;
 
-	std::cout << "insert port : ";
-	std::cin >> port;
-
-	MySocket servSock(TCP);
-	if (servSock.bind(port) == -1)
-		errorHandler("bind() error");
-
-	if (servSock.listen(5) == -1)
-		errorHandler("listen() error");
-
-	MySocket clntSock = servSock.accept();
-	
-
 	while (1) {
-		buffer = clntSock.recv();
-		clntSock.send(buffer);
+		std::cout << "insert port number(1024 ~ 49151) : ";
+		std::cin >> port;
+		if (port >= 1024 && port <= 49151)
+			break;
+		else
+			std::cout << "port number invalid" << std::endl;
 	}
 
-	clntSock.close();
-	return 0;
-}
+	MySocket sock(TCP);
 
-void errorHandler(std::string message) {
-	std::cout << message << std::endl;
-	exit(1);
+	sock.debugMode = true;
+
+	sock.bind(port);
+	sock.listen(5);
+
+	for (int i = 0; i < 5; i++) {
+		MySocket clnt = sock.accept();
+		while (1) {
+			buffer = clnt.recv();
+
+			if (buffer.size() == 1)
+				break;
+
+			clnt.send(buffer);
+		}
+		clnt.close();
+	}
+
+	sock.close();
+	return 0;
 }
