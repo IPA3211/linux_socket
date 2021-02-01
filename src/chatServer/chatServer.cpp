@@ -11,6 +11,7 @@ std::recursive_mutex socketVectorLock;
 std::recursive_mutex socketThreadLock;
 
 void getConnectLoop();
+void getConnect();
 void client(std::shared_ptr<MySocket> clnt, int index);
 
 int main(void) {
