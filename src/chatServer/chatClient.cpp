@@ -66,7 +66,7 @@ void writeServer(MySocket sock) {
 					break;
 				}
 			}
-			else if (buffer.size != 0) {
+			else if (buffer.size() != 0) {
 				sock.send(buffer);
 			}
 		}
