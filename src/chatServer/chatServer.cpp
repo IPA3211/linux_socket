@@ -62,6 +62,9 @@ void getConnect() {
 		std::lock_guard<std::recursive_mutex> thread_lock(socketThreadLock);
 		threads.push_back(thread);
 	}
+
+	std::cout << "Hello! " << index << std::endl;
+	return;
 }
 
 void client(std::shared_ptr<MySocket> clnt, int index) {
@@ -80,6 +83,8 @@ void client(std::shared_ptr<MySocket> clnt, int index) {
 			}
 		}
 
+		std::cout << index << " sended" << std::endl;
+
 	}
 
 	clnt -> close();
@@ -87,4 +92,6 @@ void client(std::shared_ptr<MySocket> clnt, int index) {
 		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 		sockets.erase(sockets.begin() + index);
 	}
+
+	std::cout << index << " good bye!" << std::endl;
 }
