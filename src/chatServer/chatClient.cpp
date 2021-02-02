@@ -7,6 +7,7 @@ void readServer(MySocket sock);
 void writeServer(MySocket sock);
 void screenRefresher();
 int getch(void);
+void changeInputType(bool type);
 
 MySocket servSock(TCP);
 std::string text;
@@ -34,13 +35,13 @@ int main(void) {
 
 	servSock.connect(ip, port);
 
+	changeInputType(true);
+
 	std::thread read(readServer, servSock);
 	std::thread write(writeServer, servSock);
-	std::thread screen(screenRefresher);
 
 	read.join();
 	write.~thread();
-	screen.~thread();
 
 	servSock.close();
 }
@@ -52,13 +53,15 @@ void readServer(MySocket sock) {
 			std::lock_guard<std::recursive_mutex> vector_lock(readLock);
 			text = text + servIn + "\n";
 		}
-		system("clear");
+		screenRefresher();
 	}
 }
 
 void writeServer(MySocket sock) {
 	while (1) {
-		int input = getch();
+		char input;
+		std::cin >> input;
+
 		if (input == '\n') {
 			if (buffer.size() == 1) {
 				if (buffer[0] == 'q' || buffer[0] == 'Q') {
@@ -73,36 +76,30 @@ void writeServer(MySocket sock) {
 		else {
 			buffer.push_back(getch());
 		}
+
+		screenRefresher();
 	}
 }
 void screenRefresher() {
-	while (1) {
-		system("clear");
-		std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n";
-		std::cout << text;
-		std::cout << std::endl;
-		std::cout << "send message : ";
-		std::cout << buffer;
-	}
+	system("clear");
+	std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n";
+	std::cout << text;
+	std::cout << std::endl;
+	std::cout << "send message : ";
+	std::cout << buffer;
 }
 
-int getch(void) {
-	int ch;
+void changeInputType(bool type) {
+	struct termios t;
 
-	struct termios buf;
-	struct termios save;
-
-	tcgetattr(0, &save);
-	buf = save;
-
-	buf.c_lflag &= ~(ICANON | ECHO);
-	buf.c_cc[VMIN] = 1;
-	buf.c_cc[VTIME] = 0;
-
-	tcsetattr(0, TCSAFLUSH, &buf);
-
-	ch = getchar();
-	tcsetattr(0, TCSAFLUSH, &save);
-
-	return ch;
+	if (type) {
+		tcgetattr(STDIN_FILENO, &t);
+		t.c_lflag &= ~ICANON;
+		tcsetattr(STDIN_FILENO, TCSANOW, &t);
+	}
+	else {
+		tcgetattr(STDIN_FILENO, &t);
+		t.c_lflag |= ICANON;
+		tcsetattr(STDIN_FILENO, TCSANOW, &t);
+	}
 }

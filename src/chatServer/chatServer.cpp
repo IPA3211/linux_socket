@@ -52,9 +52,6 @@ void getConnect() {
 	MySocket asd = clnt;
 	std::shared_ptr<MySocket> sock(new MySocket(TCP));
 	*sock = clnt;
-	std::cout << &asd << std::endl;
-	asd.send("ok");
-	std::cout << asd.recv() << std::endl;
 	{
 		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 		index = sockets.size();
