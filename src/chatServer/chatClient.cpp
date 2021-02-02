@@ -1,5 +1,6 @@
 #include "../headers/mySocket.h"
 #include <thread>
+#include <atomic>
 #include <termios.h>
 #include <mutex>
 
@@ -13,6 +14,8 @@ std::string text;
 std::string buffer;
 std::string userName;
 
+std::atomic<int> isClosed;
+
 std::recursive_mutex textLock;
 std::recursive_mutex bufferLock;
 
@@ -20,6 +23,7 @@ int main(void) {
 	std::string ip;
 	short port;
 	
+	isClosed = 0;
 
 	std::cout << "input server IP : ";
 	std::cin >> ip;
@@ -42,14 +46,24 @@ int main(void) {
 	std::thread write(writeServer, servSock);
 
 	read.join();
-	write.~thread();
+	write.join();
 
 	servSock.close();
 }
 
 void readServer(MySocket sock) {
 	while (1) {
+		if (isClosed == 1)
+			return;
+
 		std::string servIn = sock.recv();
+
+		if (servIn == "") {
+			std::cout << "server Closed" << std::endl;
+			isClosed.fetch_add(1);
+			continue;
+		}
+
 		{
 			std::lock_guard<std::recursive_mutex> vector_lock(textLock);
 			text = text + servIn + "\n";
@@ -60,19 +74,27 @@ void readServer(MySocket sock) {
 
 void writeServer(MySocket sock) {
 	while (1) {
+		if (isClosed == 1)
+			return;
+
 		int input;
 		input = getch();
+
 		{
 			std::lock_guard<std::recursive_mutex> vector_lock(bufferLock);
 			if (input == '\n') {
 				if (buffer.size() == 1) {
 					if (buffer[0] == 'q' || buffer[0] == 'Q') {
-						sock.send("::end::");
-						break;
+						sock.send("::end::" + userName);
+						isClosed.fetch_add(1);
+						continue;
 					}
 				}
 				else if (buffer.size() != 0) {
-					sock.send(userName + " : " + buffer);
+					if (sock.send(userName + " : " + buffer) == - 1) {
+						isClosed.fetch_add(1);
+						continue;
+					}
 					buffer.clear();
 				}
 			}
@@ -85,7 +107,7 @@ void writeServer(MySocket sock) {
 }
 void screenRefresher() {
 	system("clear");
-	std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n";
+	std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 	{
 		std::lock_guard<std::recursive_mutex> vector_lock(textLock);
 		std::cout << text;

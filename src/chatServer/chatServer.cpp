@@ -2,6 +2,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 MySocket sock(TCP);
 std::vector<std::shared_ptr<std::thread>> threads;
@@ -74,7 +75,18 @@ void client(MySocket clnt, int index) {
 	while (1) {
 		buffer = clnt.recv();
 
-		if (buffer.compare("::end::") == 0) {
+		if (buffer == "")
+			break;
+
+		if (buffer.substr(0, 7) == "::end::") {
+			{
+				for (auto sock : sockets) {
+				
+					std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
+					sock->send(buffer.substr(7) + " is out") == -1;
+
+				}
+			}
 			break;
 		}
 

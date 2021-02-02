@@ -227,6 +227,10 @@ std::string MySocket::recv() {
 	while (1) {
 		recvSize = read(_sock, readBuffer, BUFFER_SIZE - 1);
 
+		if (recvSize == -1) {
+			return "";
+		}
+
 		readBuffer[recvSize] = 0;
 
 		data = data + readBuffer;
