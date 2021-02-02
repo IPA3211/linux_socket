@@ -270,7 +270,6 @@ int MySocket::close() {
 
 MySocket::~MySocket()
 {
-	this->close();
 }
 
 void MySocket::errorHandler(std::string message) {

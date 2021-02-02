@@ -12,7 +12,7 @@ std::recursive_mutex socketThreadLock;
 
 void getConnectLoop();
 void getConnect();
-void client(std::shared_ptr<MySocket> clnt, int index);
+void client(MySocket clnt, int index);
 
 int main(void) {
 	short port;
@@ -47,30 +47,35 @@ void getConnectLoop() {
 }
 
 void getConnect() {
-	int index = 0;
+	int index = 100;
 	MySocket clnt = sock.accept();
-	std::shared_ptr<MySocket> sock(new MySocket(clnt));
-
+	MySocket asd = clnt;
+	std::shared_ptr<MySocket> sock(new MySocket(TCP));
+	*sock = clnt;
+	std::cout << &asd << std::endl;
+	asd.send("ok");
+	std::cout << asd.recv() << std::endl;
 	{
 		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 		index = sockets.size();
 		sockets.push_back(sock);
 	}
+	
+	std::shared_ptr<std::thread> thread(new std::thread(client, clnt, index));
 
-	std::shared_ptr<std::thread> thread(new std::thread(client, sock, index));
 	{
 		std::lock_guard<std::recursive_mutex> thread_lock(socketThreadLock);
 		threads.push_back(thread);
 	}
-
 	std::cout << "Hello! " << index << std::endl;
 	return;
 }
 
-void client(std::shared_ptr<MySocket> clnt, int index) {
+void client(MySocket clnt, int index) {
 	std::string buffer;
+	std::cout << "in" << std::endl;
 	while (1) {
-		buffer = clnt -> recv();
+		buffer = clnt.recv();
 
 		if (buffer.compare("::end::") == 0) {
 			break;
@@ -83,11 +88,9 @@ void client(std::shared_ptr<MySocket> clnt, int index) {
 			}
 		}
 
-		std::cout << index << " sended" << std::endl;
-
 	}
 
-	clnt -> close();
+	clnt.close();
 	{
 		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 		sockets.erase(sockets.begin() + index);

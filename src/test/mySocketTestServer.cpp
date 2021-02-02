@@ -30,6 +30,7 @@ int main(void) {
 				break;
 
 			clnt.send(buffer);
+			std::cout << "sended" << std::endl;
 		}
 		clnt.close();
 	}
