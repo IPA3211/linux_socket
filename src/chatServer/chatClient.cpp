@@ -7,11 +7,11 @@ void readServer(MySocket sock);
 void writeServer(MySocket sock);
 void screenRefresher();
 int getch(void);
-void changeInputType(bool type);
 
 MySocket servSock(TCP);
 std::string text;
 std::string buffer;
+std::string userName;
 
 std::recursive_mutex readLock;
 std::recursive_mutex writeLock;
@@ -33,9 +33,10 @@ int main(void) {
 			std::cout << "port number invalid" << std::endl;
 	}
 
-	servSock.connect(ip, port);
+	std::cout << "input your name : ";
+	std::cin >> userName;
 
-	changeInputType(true);
+	servSock.connect(ip, port);
 
 	std::thread read(readServer, servSock);
 	std::thread write(writeServer, servSock);
@@ -59,8 +60,8 @@ void readServer(MySocket sock) {
 
 void writeServer(MySocket sock) {
 	while (1) {
-		char input;
-		std::cin >> input;
+		int input;
+		input = getch();
 
 		if (input == '\n') {
 			if (buffer.size() == 1) {
@@ -70,11 +71,12 @@ void writeServer(MySocket sock) {
 				}
 			}
 			else if (buffer.size() != 0) {
-				sock.send(buffer);
+				sock.send(userName + " : " +buffer);
+				buffer.clear();
 			}
 		}
 		else {
-			buffer.push_back(getch());
+			buffer.push_back(input);
 		}
 
 		screenRefresher();
@@ -82,24 +84,30 @@ void writeServer(MySocket sock) {
 }
 void screenRefresher() {
 	system("clear");
-	std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n";
+	std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n";
 	std::cout << text;
 	std::cout << std::endl;
 	std::cout << "send message : ";
 	std::cout << buffer;
 }
 
-void changeInputType(bool type) {
-	struct termios t;
+int getch(void){
+	int ch;
 
-	if (type) {
-		tcgetattr(STDIN_FILENO, &t);
-		t.c_lflag &= ~ICANON;
-		tcsetattr(STDIN_FILENO, TCSANOW, &t);
-	}
-	else {
-		tcgetattr(STDIN_FILENO, &t);
-		t.c_lflag |= ICANON;
-		tcsetattr(STDIN_FILENO, TCSANOW, &t);
-	}
+	struct termios buf;
+	struct termios save;
+
+	tcgetattr(0, &save);
+	buf = save;
+
+	buf.c_lflag&=~(ICANON|ECHO);
+	buf.c_cc[VMIN] = 1;
+	buf.c_cc[VTIME] = 0;
+
+	tcsetattr(0, TCSAFLUSH, &buf);
+
+	ch = getchar();
+	tcsetattr(0, TCSAFLUSH, &save);
+
+	return ch;
 }
