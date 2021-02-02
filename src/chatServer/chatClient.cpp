@@ -13,8 +13,8 @@ std::string text;
 std::string buffer;
 std::string userName;
 
-std::recursive_mutex readLock;
-std::recursive_mutex writeLock;
+std::recursive_mutex textLock;
+std::recursive_mutex bufferLock;
 
 int main(void) {
 	std::string ip;
@@ -51,7 +51,7 @@ void readServer(MySocket sock) {
 	while (1) {
 		std::string servIn = sock.recv();
 		{
-			std::lock_guard<std::recursive_mutex> vector_lock(readLock);
+			std::lock_guard<std::recursive_mutex> vector_lock(textLock);
 			text = text + servIn + "\n";
 		}
 		screenRefresher();
@@ -62,33 +62,40 @@ void writeServer(MySocket sock) {
 	while (1) {
 		int input;
 		input = getch();
-
-		if (input == '\n') {
-			if (buffer.size() == 1) {
-				if (buffer[0] == 'q' || buffer[0] == 'Q') {
-					sock.send("::end::");
-					break;
+		{
+			std::lock_guard<std::recursive_mutex> vector_lock(bufferLock);
+			if (input == '\n') {
+				if (buffer.size() == 1) {
+					if (buffer[0] == 'q' || buffer[0] == 'Q') {
+						sock.send("::end::");
+						break;
+					}
+				}
+				else if (buffer.size() != 0) {
+					sock.send(userName + " : " + buffer);
+					buffer.clear();
 				}
 			}
-			else if (buffer.size() != 0) {
-				sock.send(userName + " : " +buffer);
-				buffer.clear();
+			else {
+				buffer.push_back(input);
 			}
 		}
-		else {
-			buffer.push_back(input);
-		}
-
 		screenRefresher();
 	}
 }
 void screenRefresher() {
 	system("clear");
 	std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n";
-	std::cout << text;
+	{
+		std::lock_guard<std::recursive_mutex> vector_lock(textLock);
+		std::cout << text;
+	}
 	std::cout << std::endl;
 	std::cout << "send message : ";
-	std::cout << buffer;
+	{
+		std::lock_guard<std::recursive_mutex> vector_lock(bufferLock);
+		std::cout << buffer;
+	}
 }
 
 int getch(void){
