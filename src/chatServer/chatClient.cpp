@@ -14,7 +14,7 @@ std::string text;
 std::string buffer;
 std::string userName;
 
-std::atomic<int> isClosed;
+std::atomic<bool> isClosed(false);
 
 std::recursive_mutex textLock;
 std::recursive_mutex bufferLock;
@@ -53,14 +53,14 @@ int main(void) {
 
 void readServer(MySocket sock) {
 	while (1) {
-		if (isClosed == 1)
+		if (isClosed.load())
 			return;
 
 		std::string servIn = sock.recv();
 
 		if (servIn.size() == 1) {
 			std::cout << "server Closed" << std::endl;
-			isClosed.fetch_add(1);
+			isClosed.store(true, std::memory_order_release);
 			continue;
 		}
 
@@ -74,7 +74,7 @@ void readServer(MySocket sock) {
 
 void writeServer(MySocket sock) {
 	while (1) {
-		if (isClosed == 1)
+		if (isClosed.load())
 			return;
 
 		int input;
@@ -86,13 +86,13 @@ void writeServer(MySocket sock) {
 				if (buffer.size() == 1) {
 					if (buffer[0] == 'q' || buffer[0] == 'Q') {
 						sock.send("::end::" + userName);
-						isClosed.fetch_add(1);
+						isClosed.store(true, std::memory_order_release);
 						continue;
 					}
 				}
 				else if (buffer.size() != 0) {
 					if (sock.send(userName + " : " + buffer) == - 1) {
-						isClosed.fetch_add(1);
+						isClosed.store(true, std::memory_order_release);
 						continue;
 					}
 					buffer.clear();
