@@ -78,9 +78,9 @@ void writeServer(MySocket sock) {
 			}
 			else {
 				buffer.push_back(input);
+				screenRefresher();
 			}
 		}
-		screenRefresher();
 	}
 }
 void screenRefresher() {
@@ -94,7 +94,7 @@ void screenRefresher() {
 	std::cout << "send message : ";
 	{
 		std::lock_guard<std::recursive_mutex> vector_lock(bufferLock);
-		std::cout << buffer;
+		std::cout << buffer << std::endl;
 	}
 }
 
