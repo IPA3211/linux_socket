@@ -213,6 +213,8 @@ int MySocket::send(std::string msg) {
 	default:
 		break;
 	}
+
+	return 0;
 }
 
 int MySocket::sendTo(std::string msg, const SockAddrSet& to) {

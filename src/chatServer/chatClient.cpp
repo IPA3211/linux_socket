@@ -58,7 +58,7 @@ void readServer(MySocket sock) {
 
 		std::string servIn = sock.recv();
 
-		if (servIn == "") {
+		if (servIn.size() == 1) {
 			std::cout << "server Closed" << std::endl;
 			isClosed.fetch_add(1);
 			continue;

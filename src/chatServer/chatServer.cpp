@@ -75,7 +75,7 @@ void client(MySocket clnt, int index) {
 	while (1) {
 		buffer = clnt.recv();
 
-		if (buffer == "")
+		if (buffer.size() == 1)
 			break;
 
 		if (buffer.substr(0, 7) == "::end::") {
