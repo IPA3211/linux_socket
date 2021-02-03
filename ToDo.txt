@@ -1,0 +1,2 @@
+지금 vector size 로 index 를 주고 있어서 들어온 순서대로 나가야하는 버그가 있음
+thread 를 vector 가 아닌 list 로 받는 것이 좋을 것 같음
