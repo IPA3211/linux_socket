@@ -33,6 +33,7 @@ std::recursive_mutex socketThreadLock;
 int main(void) {
 	short port;
 	clients.reserve(clientSize);
+	threads.reserve(clientSize);
 
 	for (int i = 0; i < clientSize; i++) {
 		clients[i].isConnected = false;
