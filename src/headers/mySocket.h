@@ -62,6 +62,7 @@ public:
 
 	MySocket();
 	MySocket(const int &type);
+	MySocket(const MySocket &other);
 	MySocket(int sock, const int &type, sockaddr_in addr);
 
 	MySocket& operator=(MySocket& ref);
@@ -111,6 +112,14 @@ MySocket::MySocket(const int &type)
 	default:
 		break;
 	}
+}
+
+MySocket::MySocket(const MySocket &other) {
+	_type = other._type;
+	_sock = other._sock;
+	_port = other._port;
+	_ip = other._ip;
+	_addr = other._addr;
 }
 
 MySocket::MySocket(int sock, const int &type, sockaddr_in addr) {

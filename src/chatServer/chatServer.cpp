@@ -90,7 +90,7 @@ void getConnect() {
 		for (i = 0; i < clientSize; i++) {
 			if (!clients[i].isConnected) {
 				clients[i].isConnected = true;
-				clients[i].sock = std::make_shared<MySocket>(sock.accept());
+				clients[i].sock = std::make_shared<MySocket>(new MySocket(sock.accept()));
 			}
 		}
 	}
