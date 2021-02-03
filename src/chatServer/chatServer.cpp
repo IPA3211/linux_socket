@@ -85,14 +85,15 @@ void getConnectLoop() {
 
 void getConnect() {
 	int i = 0;
-	MySocket temp = sock.accept();
+	std::shared_ptr<MySocket> temp(new MySocket(TCP));
+	MySocket clnt = sock.accept();
+	*temp = clnt;
 	{
 		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 		for (i = 0; i < clientSize; i++) {
 			if (!clients[i].isConnected) {
 				clients[i].isConnected = true;
-				clients[i].sock = std::make_shared<MySocket>(new MySocket());
-				*clients[i].sock = temp;
+				clients[i].sock = temp;
 			}
 		}
 	}
