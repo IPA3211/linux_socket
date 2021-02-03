@@ -60,6 +60,7 @@ class MySocket
 public:
 	bool debugMode = false;
 
+	MySocket();
 	MySocket(const int &type);
 	MySocket(int sock, const int &type, sockaddr_in addr);
 
@@ -92,6 +93,10 @@ private:
 
 	bool isConnected = false;
 };
+
+MySocket::MySocket() {
+
+}
 
 MySocket::MySocket(const int &type)
 {
