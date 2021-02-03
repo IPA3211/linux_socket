@@ -42,7 +42,6 @@ int main(void) {
 
 	servSock.connect(ip, port);
 
-	screenRefresher();
 	std::thread read(readServer, servSock);
 	std::thread write(writeServer, servSock);
 

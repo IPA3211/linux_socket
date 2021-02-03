@@ -63,7 +63,9 @@ int main(void) {
 		if (clientSize == i) {
 			i = 0;
 		}
-
+		if(threads[i].valid() == false){
+			continue;
+		}
 		auto status = threads[i].wait_for(std::chrono::microseconds(0));
 		if (status == std::future_status::ready) {
 			std::cout << i << " : Thread finished" << std::endl;
@@ -85,23 +87,28 @@ void getConnectLoop() {
 }
 
 void getConnect() {
-	int i = 0;
+	int i = 1000;
 	std::shared_ptr<MySocket> temp(new MySocket(TCP));
 	MySocket clnt = sock.accept();
 	*temp = clnt;
 	{
+		std::cout << "1" << std::endl;
 		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 		for (i = 0; i < clientSize; i++) {
 			if (!clients[i].isConnected) {
 				clients[i].isConnected = true;
 				clients[i].sock = temp;
+				break;
 			}
 		}
+		std::cout << i << std::endl;
 	}
 
 	{
+		std::cout << "3" << std::endl;
 		std::lock_guard<std::recursive_mutex> thread_lock(socketThreadLock);
 		threads[i] = std::async(clientSupport, i);
+		std::cout << "4" << std::endl;
 	}
 	std::cout << "Hello! " << i << std::endl;
 	return;
@@ -121,12 +128,14 @@ void clientSupport(int index) {
 
 	while (1) {
 		buffer = clnt.recv();
+		std::cout << buffer << std::endl;
 		
 		// when client shutdown
 		if (buffer.size() == 1 || buffer.substr(0, 7) == "::end::") {
-			for (auto a : clients) {
-				std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
-				a.sock -> send(buffer.substr(7) + " is out");
+			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
+			for (int i = 0; i < clientSize; i++) {
+				if(clients[i].isConnected)
+					clients[i].sock -> send(buffer.substr(7) + " is out");
 			}
 			break;
 		}
@@ -134,8 +143,9 @@ void clientSupport(int index) {
 		//send message to every clients
 		{
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
-			for (auto a : clients) {
-				a.sock->send(buffer);
+			for (int i = 0; i < clientSize; i++) {
+				if(clients[i].isConnected)
+					clients[i].sock->send(buffer);
 			}
 		}
 	}
