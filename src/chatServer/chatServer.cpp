@@ -124,6 +124,7 @@ void clientSupport(int index) {
 	}
 
 	name = clnt.recv();
+	name.pop_back();
 
 	if (name.size() == 1) {
 		clients[index].isConnected = false;
@@ -161,7 +162,7 @@ void clientSupport(int index) {
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 			for (int i = 0; i < clientSize; i++) {
 				if(clients[i].isConnected)
-					clients[i].sock->send(name + " : " + buffer);
+					clients[i].sock->send("" + name + " : " + buffer);
 			}
 		}
 	}

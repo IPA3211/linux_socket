@@ -42,9 +42,9 @@ int main(void) {
 	std::cin >> userName;
 
 	servSock.send(userName);
-	std::string servIn = servSock.recv();
-
-	if (servIn.size() == 1) {
+	text = servSock.recv();
+	
+	if (text.size() == 1) {
 		std::cout << "server Closed" << std::endl;
 		servSock.close();
 		return 0;
