@@ -36,11 +36,21 @@ int main(void) {
 		else
 			std::cout << "port number invalid" << std::endl;
 	}
+	servSock.connect(ip, port);
 
 	std::cout << "input your name : ";
 	std::cin >> userName;
 
-	servSock.connect(ip, port);
+	servSock.send(userName);
+	std::string servIn = servSock.recv();
+
+	if (servIn.size() == 1) {
+		std::cout << "server Closed" << std::endl;
+		servSock.close();
+		return 0;
+	}
+
+	screenRefresher();
 
 	std::thread read(readServer, servSock);
 	std::thread write(writeServer, servSock);
@@ -49,6 +59,8 @@ int main(void) {
 	write.join();
 
 	servSock.close();
+
+	return 0;
 }
 
 void readServer(MySocket sock) {
@@ -91,7 +103,7 @@ void writeServer(MySocket sock) {
 					}
 				}
 				else if (buffer.size() != 0) {
-					if (sock.send(userName + " : " + buffer) == - 1) {
+					if (sock.send(buffer) == - 1) {
 						isClosed.store(true, std::memory_order_release);
 						continue;
 					}
@@ -104,6 +116,8 @@ void writeServer(MySocket sock) {
 			}
 		}
 	}
+
+	return;
 }
 void screenRefresher() {
 	system("clear");

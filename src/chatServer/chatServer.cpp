@@ -10,6 +10,7 @@ struct client
 {
 	bool isConnected = false;
 	std::shared_ptr<MySocket> sock;
+	std::string name;
 	
 	client(bool a, std::shared_ptr<MySocket> b) {
 		isConnected = a;
@@ -52,12 +53,7 @@ int main(void) {
 	sock.bind(port);
 	sock.listen(clientSize);
 
-	std::cout << "Server Start" << std::endl;
-
-	getConnect();
-
 	auto acceptThread = std::async(getConnectLoop);
-
 
 	for (int i = 0; i <= clientSize; i++){
 		if (clientSize == i) {
@@ -78,8 +74,8 @@ int main(void) {
 }
 
 void getConnectLoop() {
-	std::cout << "Loop Start" << std::endl;
 	sleep(1);
+	std::cout << "Server Start" << std::endl;
 	while (1) {
 		getConnect();
 	}
@@ -116,6 +112,7 @@ void getConnect() {
 
 void clientSupport(int index) {
 	std::string buffer;
+	std::string name;
 	std::cout << "in" << std::endl;
 
 	bool isConnected;
@@ -126,16 +123,35 @@ void clientSupport(int index) {
 		clnt = *clients[index].sock;
 	}
 
+	name = clnt.recv();
+
+	if (name.size() == 1) {
+		clients[index].isConnected = false;
+		clients[index].sock = NULL;
+		clnt.close();
+		return;
+	}
+
+	{
+		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
+		clients[index].name = name;
+	}
+
+	clnt.send("well come " + name + "!");
+
 	while (1) {
 		buffer = clnt.recv();
-		std::cout << buffer << std::endl;
 		
 		// when client shutdown
 		if (buffer.size() == 1 || buffer.substr(0, 7) == "::end::") {
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
+			clients[index].isConnected = false;
+			clients[index].sock = NULL;
+			clients[index].name.clear();
+
 			for (int i = 0; i < clientSize; i++) {
 				if(clients[i].isConnected)
-					clients[i].sock -> send(buffer.substr(7) + " is out");
+					clients[i].sock -> send(name + " is out");
 			}
 			break;
 		}
@@ -145,18 +161,12 @@ void clientSupport(int index) {
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 			for (int i = 0; i < clientSize; i++) {
 				if(clients[i].isConnected)
-					clients[i].sock->send(buffer);
+					clients[i].sock->send(name + " : " + buffer);
 			}
 		}
 	}
 
 	clnt.close();
-
-	{
-		std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
-		clients[index].isConnected = false;
-		clients[index].sock = NULL;
-	}
 
 	std::cout << index << " good bye!" << std::endl;
 }
