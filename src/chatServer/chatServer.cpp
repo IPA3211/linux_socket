@@ -133,7 +133,7 @@ void clientSupport(int index) {
 	name = clnt.recv();
 	name.pop_back();
 
-	if (name.size() == 1) {
+	if (name.size() <= 1) {
 		clients[index].isConnected = false;
 		clients[index].sock = NULL;
 		clnt.close();
@@ -151,7 +151,7 @@ void clientSupport(int index) {
 		buffer = clnt.recv();
 
 		// when client shutdown
-		if (buffer.size() == 1 || buffer.substr(0, 7) == "::end::") {
+		if (buffer.size() <= 1 || buffer.substr(0, 7) == "::end::") {
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 			clients[index].isConnected = false;
 			clients[index].sock = NULL;
@@ -169,7 +169,17 @@ void clientSupport(int index) {
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 			for (int i = 0; i < clientSize; i++) {
 				if (clients[i].isConnected)
-					clients[i].sock->send("" + name + " : " + buffer);
+					if (clients[i].sock->send("" + name + " : " + buffer) == -1) {
+						clients[index].isConnected = false;
+						clients[index].sock = NULL;
+						clients[index].name.clear();
+
+						for (int i = 0; i < clientSize; i++) {
+							if (clients[i].isConnected)
+								clients[i].sock->send(name + " is out");
+						}
+						break;
+					}
 			}
 		}
 	}
