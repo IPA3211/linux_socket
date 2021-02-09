@@ -94,7 +94,9 @@ public:
 	~MySocket();
 
 private:
+#ifdef _WIN32
 	WSADATA WsaData;
+#endif
 	int _type = 0;
 	SOCKET _sock = 0;
 	short _port = 0;

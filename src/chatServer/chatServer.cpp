@@ -75,7 +75,13 @@ int main(void) {
 }
 
 void getConnectLoop() {
+
+#ifdef _WIN32
 	Sleep(1000);
+#else
+	sleep(1);
+#endif
+
 	std::cout << "Server Start" << std::endl;
 	while (1) {
 		getConnect();
