@@ -1,9 +1,13 @@
 #include "../headers/mySocket.h"
 #include <thread>
 #include <atomic>
-#include <termios.h>
 #include <mutex>
 
+#ifdef _WIN32
+#include <conio.h>
+#else
+#include <termios.h>
+#endif
 void readServer(MySocket sock);
 void writeServer(MySocket sock);
 void screenRefresher();
@@ -94,7 +98,7 @@ void writeServer(MySocket sock) {
 
 		{
 			std::lock_guard<std::recursive_mutex> vector_lock(bufferLock);
-			if (input == '\n') {
+			if (input == '\n' || input == '\r') {
 				if (buffer.size() == 1) {
 					if (buffer[0] == 'q' || buffer[0] == 'Q') {
 						sock.send("::end::" + userName);
@@ -120,7 +124,11 @@ void writeServer(MySocket sock) {
 	return;
 }
 void screenRefresher() {
+#ifdef _WIN32
+	system("cls");
+#else
 	system("clear");
+#endif
 	std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 	{
 		std::lock_guard<std::recursive_mutex> vector_lock(textLock);
@@ -133,7 +141,7 @@ void screenRefresher() {
 		std::cout << buffer << std::endl;
 	}
 }
-
+#ifdef __linux__
 int getch(void){
 	int ch;
 
@@ -154,3 +162,4 @@ int getch(void){
 
 	return ch;
 }
+#endif

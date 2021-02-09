@@ -66,7 +66,7 @@ SockAddrSet::~SockAddrSet()
 class MySocket
 {
 public:
-	bool debugMode = false;
+	bool debugMode = true;
 
 	MySocket();
 	MySocket(const int &type);
