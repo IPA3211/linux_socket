@@ -11,10 +11,16 @@ struct client
 	bool isConnected = false;
 	std::shared_ptr<MySocket> sock;
 	std::string name;
-	
+
 	client(bool a, std::shared_ptr<MySocket> b) {
 		isConnected = a;
 		sock = b;
+	}
+
+	client() {
+		isConnected = false;
+		sock = NULL;
+		name = "";
 	}
 };
 
@@ -33,13 +39,8 @@ std::recursive_mutex socketThreadLock;
 
 int main(void) {
 	short port;
-	clients.reserve(clientSize);
-	threads.reserve(clientSize);
-
-	for (int i = 0; i < clientSize; i++) {
-		clients[i].isConnected = false;
-		clients[i].sock = NULL;
-	}
+	clients.resize(clientSize);
+	threads.resize(clientSize);
 
 	while (1) {
 		std::cout << "insert port number(1024 ~ 49151) : ";
@@ -49,17 +50,17 @@ int main(void) {
 		else
 			std::cout << "port number invalid" << std::endl;
 	}
-	
+
 	sock.bind(port);
 	sock.listen(clientSize);
 
 	auto acceptThread = std::async(getConnectLoop);
 
-	for (int i = 0; i <= clientSize; i++){
+	for (int i = 0; i <= clientSize; i++) {
 		if (clientSize == i) {
 			i = 0;
 		}
-		if(threads[i].valid() == false){
+		if (threads[i].valid() == false) {
 			continue;
 		}
 		auto status = threads[i].wait_for(std::chrono::microseconds(0));
@@ -70,11 +71,11 @@ int main(void) {
 	}
 
 	acceptThread.get();
-	
+
 }
 
 void getConnectLoop() {
-	sleep(1);
+	Sleep(1000);
 	std::cout << "Server Start" << std::endl;
 	while (1) {
 		getConnect();
@@ -142,7 +143,7 @@ void clientSupport(int index) {
 
 	while (1) {
 		buffer = clnt.recv();
-		
+
 		// when client shutdown
 		if (buffer.size() == 1 || buffer.substr(0, 7) == "::end::") {
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
@@ -151,8 +152,8 @@ void clientSupport(int index) {
 			clients[index].name.clear();
 
 			for (int i = 0; i < clientSize; i++) {
-				if(clients[i].isConnected)
-					clients[i].sock -> send(name + " is out");
+				if (clients[i].isConnected)
+					clients[i].sock->send(name + " is out");
 			}
 			break;
 		}
@@ -161,7 +162,7 @@ void clientSupport(int index) {
 		{
 			std::lock_guard<std::recursive_mutex> vector_lock(socketVectorLock);
 			for (int i = 0; i < clientSize; i++) {
-				if(clients[i].isConnected)
+				if (clients[i].isConnected)
 					clients[i].sock->send("" + name + " : " + buffer);
 			}
 		}

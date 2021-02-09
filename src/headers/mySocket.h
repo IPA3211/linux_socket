@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 
 #ifdef __linux__
 
@@ -8,10 +9,17 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+#define SOCKET int
+#define SOCKET_ERROR -1
+
 #endif
 
+
 #ifdef _WIN32
+
 #include <WinSock2.h>
+#define socklen_t int
+
 #endif
 
 #define TCP 0
@@ -48,11 +56,11 @@ SockAddrSet::SockAddrSet(short port) {
 	_size = sizeof(_addr);
 }
 
-SockAddrSet::SockAddrSet() {	_size = sizeof(_addr);}
+SockAddrSet::SockAddrSet() { _size = sizeof(_addr); }
 
 SockAddrSet::~SockAddrSet()
 {
-	
+
 }
 
 class MySocket
@@ -82,12 +90,13 @@ public:
 	void getSocketInfo(int& _sock, int& _port, int& _type, sockaddr_in& addr);
 
 	static void errorHandler(std::string message);
-	
+
 	~MySocket();
 
 private:
+	WSADATA WsaData;
 	int _type = 0;
-	int _sock = 0;
+	SOCKET _sock = 0;
 	short _port = 0;
 	std::string _ip = "";
 	sockaddr_in _addr = {};
@@ -96,18 +105,25 @@ private:
 };
 
 MySocket::MySocket() {
-
+#ifdef _WIN32
+	if (WSAStartup(MAKEWORD(2, 2), &WsaData) != 0)
+		errorHandler("SetUp error");
+#endif
 }
 
 MySocket::MySocket(const int &type)
 {
+#ifdef _WIN32
+	if (WSAStartup(MAKEWORD(2, 2), &WsaData) != 0)
+		errorHandler("SetUp error");
+#endif
 	_type = type;
 	switch (type)
 	{
-	case TCP :
+	case TCP:
 		_sock = socket(PF_INET, SOCK_STREAM, 0);
 		break;
-	case UDP :
+	case UDP:
 		_sock = socket(PF_INET, SOCK_DGRAM, 0);
 	default:
 		break;
@@ -115,6 +131,10 @@ MySocket::MySocket(const int &type)
 }
 
 MySocket::MySocket(const MySocket &other) {
+#ifdef _WIN32
+	if (WSAStartup(MAKEWORD(2, 2), &WsaData) != 0)
+		errorHandler("SetUp error");
+#endif
 	_type = other._type;
 	_sock = other._sock;
 	_port = other._port;
@@ -123,12 +143,20 @@ MySocket::MySocket(const MySocket &other) {
 }
 
 MySocket::MySocket(int sock, const int &type, sockaddr_in addr) {
+#ifdef _WIN32
+	if (WSAStartup(MAKEWORD(2, 2), &WsaData) != 0)
+		errorHandler("SetUp error");
+#endif
 	_sock = sock;
 	_type = type;
 	_addr = addr;
 }
 
 MySocket& MySocket::operator=(MySocket& ref) {
+#ifdef _WIN32
+	if (WSAStartup(MAKEWORD(2, 2), &WsaData) != 0)
+		errorHandler("SetUp error");
+#endif
 	_type = ref._type;
 	_sock = ref._sock;
 	_port = ref._port;
@@ -146,7 +174,8 @@ int MySocket::bind(const short &port) {
 	int temp = ::bind(_sock, (sockaddr *)&_addr, sizeof(_addr));
 
 	if (debugMode) {
-		if (temp == -1) {
+		if (temp == SOCKET_ERROR) {
+			this->close();
 			errorHandler("bind() error");
 		}
 	}
@@ -166,8 +195,8 @@ int MySocket::connect(std::string address, const short &port) {
 			errorHandler("connect() error");
 		}
 	}
-	
-	if(temp != -1)
+
+	if (temp != -1)
 		isConnected = true;
 
 	return temp;
@@ -210,15 +239,25 @@ int MySocket::send(std::string msg) {
 	switch (_type)
 	{
 	case TCP:
+#ifdef _WIN32
+		return ::send(_sock, msg.c_str(), msg.size(), 0);
+#else
 		return write(_sock, msg.c_str(), msg.size());
+#endif
 		break;
 	case UDP:
 		for (int i = 0; ; i++) {
-			if(msg.size() > bfSize * (i + 1))
+			if (msg.size() > bfSize * (i + 1))
 				buffer = msg.substr(bfSize * i, bfSize);
 			else
 				buffer = msg.substr(bfSize * i, msg.size() - bfSize * i);
-			int a = write(_sock, buffer.c_str(), buffer.size());
+
+#ifdef _WIN32
+			int a = ::send(_sock, msg.c_str(), msg.size(), 0);
+#else
+			int a = write(_sock, msg.c_str(), msg.size());
+#endif
+
 			std::cout << a << std::endl;
 			if (a <= bfSize - 1)
 				return a;
@@ -241,7 +280,11 @@ std::string MySocket::recv() {
 	int recvSize;
 	std::string data;
 	while (1) {
+#ifdef _WIN32
+		recvSize = ::recv(_sock, readBuffer, BUFFER_SIZE - 1, 0);
+#else
 		recvSize = read(_sock, readBuffer, BUFFER_SIZE - 1);
+#endif
 
 		if (recvSize == -1) {
 			return "";
@@ -267,7 +310,7 @@ std::string MySocket::recvFrom(SockAddrSet& from) {
 	std::string data;
 	while (1) {
 		recvSize = ::recvfrom(_sock, readBuffer, BUFFER_SIZE - 1, 0,
-						 (struct sockaddr *)&from._addr, &from._size);
+			(struct sockaddr *)&from._addr, &from._size);
 
 		readBuffer[recvSize] = 0;
 
@@ -284,7 +327,13 @@ std::string MySocket::recvFrom(SockAddrSet& from) {
 }
 
 int MySocket::close() {
+#ifdef __linux__
 	::close(_sock);
+#endif
+#ifdef _WIN32
+	::closesocket(_sock);
+	WSACleanup();
+#endif
 	return 0;
 }
 
